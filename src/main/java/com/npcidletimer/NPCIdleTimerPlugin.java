@@ -1,3 +1,4 @@
+// Maintainership: vonpawn (2020-2022), lejeffe (2022-2024), Vinnie-Singleton (2026-).
 package com.npcidletimer;
 
 import com.google.common.annotations.VisibleForTesting;
