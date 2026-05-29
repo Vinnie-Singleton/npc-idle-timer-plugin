@@ -180,8 +180,39 @@ public interface NPCIdleTimerConfig extends Config
 	{
 		return false;
 	}
+
+	@Range(
+			max = 200
+	)
 	@ConfigItem(
 			position = 11,
+			keyName = "rememberLastN",
+			name = "Remember last N NPCs",
+			description = "Number of despawned NPCs to remember timer state for. If one respawns at the same tile (e.g. a fishing spot you came back to), the old timer is restored. Off by default; set above 0 to enable.",
+			section = timer_settings
+	)
+	default int rememberLastN()
+	{
+		return 0;
+	}
+
+	@Range(
+			max = 86400
+	)
+	@ConfigItem(
+			position = 12,
+			keyName = "rememberMaxAgeSeconds",
+			name = "Remember max age (s)",
+			description = "Drop remembered NPC timers older than this many seconds. Prevents stale timers from being restored after a long absence.",
+			section = timer_settings
+	)
+	default int rememberMaxAgeSeconds()
+	{
+		return 600;
+	}
+
+	@ConfigItem(
+			position = 13,
 			keyName = "customFont",
 			name = "Enable custom fonts",
 			description = "Enabling this setting makes it possible to use the custom font from the box below this",
@@ -192,7 +223,7 @@ public interface NPCIdleTimerConfig extends Config
 	}
 
 	@ConfigItem(
-			position = 12,
+			position = 14,
 			keyName = "fontName",
 			name = "Font",
 			description = "Name of the font to use for the hp shown. Leave blank to use RuneLite setting.",
@@ -203,7 +234,7 @@ public interface NPCIdleTimerConfig extends Config
 	}
 
 	@ConfigItem(
-			position = 13,
+			position = 15,
 			keyName = "fontStyle",
 			name = "Font style",
 			description = "Style of the font to use for the hp shown. Only works with custom font.",
@@ -214,7 +245,7 @@ public interface NPCIdleTimerConfig extends Config
 	}
 
 	@ConfigItem(
-			position = 14,
+			position = 16,
 			keyName = "fontSize",
 			name = "Font size",
 			description = "Size of the font to use for XP drops. Only works with custom font.",
