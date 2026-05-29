@@ -188,12 +188,12 @@ public interface NPCIdleTimerConfig extends Config
 			position = 11,
 			keyName = "rememberLastN",
 			name = "Remember last N NPCs",
-			description = "Number of despawned NPCs to remember timer state for. If one respawns at the same tile (e.g. a fishing spot you came back to), the old timer is restored. Off by default; set above 0 to enable.",
+			description = "Keep timer state for this many despawned NPCs so timers resume if they respawn at the same tile (e.g. fishing spots after teleporting back). Set to 0 to disable.",
 			section = timer_settings
 	)
 	default int rememberLastN()
 	{
-		return 0;
+		return 20;
 	}
 
 	@Range(
@@ -213,6 +213,18 @@ public interface NPCIdleTimerConfig extends Config
 
 	@ConfigItem(
 			position = 13,
+			keyName = "recycleTimerAtZero",
+			name = "Restart timer when it reaches 0",
+			description = "Restart the timer from the top when it hits 0 instead of leaving it stuck at 0.",
+			section = timer_settings
+	)
+	default boolean recycleTimerAtZero()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			position = 14,
 			keyName = "customFont",
 			name = "Enable custom fonts",
 			description = "Enabling this setting makes it possible to use the custom font from the box below this",
@@ -223,7 +235,7 @@ public interface NPCIdleTimerConfig extends Config
 	}
 
 	@ConfigItem(
-			position = 14,
+			position = 15,
 			keyName = "fontName",
 			name = "Font",
 			description = "Name of the font to use for the hp shown. Leave blank to use RuneLite setting.",
@@ -234,7 +246,7 @@ public interface NPCIdleTimerConfig extends Config
 	}
 
 	@ConfigItem(
-			position = 15,
+			position = 16,
 			keyName = "fontStyle",
 			name = "Font style",
 			description = "Style of the font to use for the hp shown. Only works with custom font.",
@@ -245,7 +257,7 @@ public interface NPCIdleTimerConfig extends Config
 	}
 
 	@ConfigItem(
-			position = 16,
+			position = 17,
 			keyName = "fontSize",
 			name = "Font size",
 			description = "Size of the font to use for XP drops. Only works with custom font.",

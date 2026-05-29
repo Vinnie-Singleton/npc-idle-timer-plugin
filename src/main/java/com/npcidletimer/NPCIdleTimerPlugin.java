@@ -1,4 +1,3 @@
-// Maintainership: vonpawn (2020-2022), lejeffe (2022-2024), Vinnie-Singleton (2026-).
 package com.npcidletimer;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -148,7 +147,8 @@ public class NPCIdleTimerPlugin extends Plugin
 		if (event.getGameState() == GameState.LOGIN_SCREEN ||
 			event.getGameState() == GameState.HOPPING)
 		{
-			// Clear remembered timers too: they're tied to this session.
+			// Drop both live and remembered timers — different worlds / sessions
+			// must not bleed timer state into each other.
 			wanderingNPCs.clear();
 			rememberedTimers.clear();
 		}
@@ -209,6 +209,25 @@ public class NPCIdleTimerPlugin extends Plugin
 					wnpc.setTimeWithoutMoving(lastTickUpdate.getEpochSecond() - wnpc.getStoppedMovingTick().getEpochSecond());
 				}
 			}
+
+			// Opt-in: when the countdown reaches 0 the NPC has sat idle past its
+			// expected lifetime, so recycle the timer back to full. This recovers
+			// from a missed despawn/respawn (e.g. a reused NPC index) instead of
+			// leaving the overlay pinned at 0. Off by default, so normal behavior
+			// is unchanged for anyone who doesn't enable it.
+			final double maxDisplay = config.customTimer() ? config.customTiming() : config.maxDisplay();
+			if (config.recycleTimerAtZero() && maxDisplay > 0 && wnpc.getTimeWithoutMoving() >= maxDisplay)
+			{
+				if (config.showOverlayTicks())
+				{
+					wnpc.setTrueStoppedMovingTick(lastTrueTickUpdate);
+				}
+				else
+				{
+					wnpc.setStoppedMovingTick(lastTickUpdate);
+				}
+				wnpc.setTimeWithoutMoving(0);
+			}
 		}
 	}
 
@@ -223,7 +242,7 @@ public class NPCIdleTimerPlugin extends Plugin
 		clientThread.invoke(() ->
 		{
 			selectedNPCs = getSelectedNPCs();
-			// If the user shrinks the cache, trim down now instead of letting old entries linger.
+			// If the user shrinks the cache, trim now rather than waiting for evictions.
 			while (rememberedTimers.size() > Math.max(0, config.rememberLastN()))
 			{
 				rememberedTimers.remove(rememberedTimers.keySet().iterator().next());
@@ -295,6 +314,7 @@ public class NPCIdleTimerPlugin extends Plugin
 		}
 		final CacheKey key = new CacheKey(wnpc.getNpcName().toLowerCase(), wnpc.getCurrentLocation());
 		rememberedTimers.put(key, new CachedTimer(
+			wnpc.getNpcIndex(),
 			wnpc.getStoppedMovingTick(),
 			wnpc.getTrueStoppedMovingTick(),
 			wnpc.getTimeWithoutMoving(),
@@ -311,6 +331,16 @@ public class NPCIdleTimerPlugin extends Plugin
 		final CacheKey key = new CacheKey(npc.getName().toLowerCase(), npc.getWorldLocation());
 		final CachedTimer cached = rememberedTimers.remove(key);
 		if (cached == null)
+		{
+			return null;
+		}
+		// Same name + tile is not enough: a different NPC index means the entity
+		// we cached despawned while out of view and a fresh one took its place
+		// (e.g. teleport away, the fishing spot moves, a new spot spawns on the
+		// same tile). Restoring the old timer there would pin a new spot at 0.
+		// Server indices are stable for an entity's lifetime, so only restore
+		// when the index matches the thing we remembered.
+		if (cached.npcIndex != npc.getIndex())
 		{
 			return null;
 		}
@@ -351,13 +381,15 @@ public class NPCIdleTimerPlugin extends Plugin
 
 	private static final class CachedTimer
 	{
+		final int npcIndex;
 		final Instant stoppedMovingTick;
 		final long trueStoppedMovingTick;
 		final long timeWithoutMoving;
 		final Instant cachedAt;
 
-		CachedTimer(Instant stoppedMovingTick, long trueStoppedMovingTick, long timeWithoutMoving, Instant cachedAt)
+		CachedTimer(int npcIndex, Instant stoppedMovingTick, long trueStoppedMovingTick, long timeWithoutMoving, Instant cachedAt)
 		{
+			this.npcIndex = npcIndex;
 			this.stoppedMovingTick = stoppedMovingTick;
 			this.trueStoppedMovingTick = trueStoppedMovingTick;
 			this.timeWithoutMoving = timeWithoutMoving;
