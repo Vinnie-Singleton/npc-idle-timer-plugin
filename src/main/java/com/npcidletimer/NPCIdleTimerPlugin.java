@@ -20,6 +20,7 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.NpcDespawned;
 import net.runelite.api.events.NpcSpawned;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -36,6 +37,9 @@ public class NPCIdleTimerPlugin extends Plugin
 {
 	@Inject
 	private Client client;
+
+	@Inject
+	private ClientThread clientThread;
 
 	@Inject
 	private NPCIdleTimerConfig config;
@@ -67,8 +71,11 @@ public class NPCIdleTimerPlugin extends Plugin
 	protected void startUp()
 	{
 		overlayManager.add(npcidletimeroverlay);
-		selectedNPCs = getSelectedNPCs();
-		rebuildAllNpcs();
+		clientThread.invoke(() ->
+		{
+			selectedNPCs = getSelectedNPCs();
+			rebuildAllNpcs();
+		});
 	}
 
 	@Override
@@ -192,8 +199,11 @@ public class NPCIdleTimerPlugin extends Plugin
 			return;
 		}
 
-		selectedNPCs = getSelectedNPCs();
-		rebuildAllNpcs();
+		clientThread.invoke(() ->
+		{
+			selectedNPCs = getSelectedNPCs();
+			rebuildAllNpcs();
+		});
 	}
 
 	@VisibleForTesting
